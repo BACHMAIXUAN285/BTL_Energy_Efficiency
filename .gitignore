@@ -1,0 +1,17 @@
+# Virtual environment directories
+venv/
+env/
+
+# Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Congiguration files for IDEs
+.vscode/
+.idea/
+
+# Other files
+.DS_Store
+Thumbs.db
