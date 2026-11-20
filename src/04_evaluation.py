@@ -36,17 +36,26 @@ METRIC_NAMES = ["rmse", "mae", "r2", "mape_percent"]
 def load_dataset(data_path: Path) -> pd.DataFrame:
     if not data_path.is_file():
         raise FileNotFoundError(
-            f"Không tìm thấy tệp Excel: {data_path}. "
-            "Hãy truyền đường dẫn đúng bằng tham số --data."
+            f"Không tìm thấy tệp dữ liệu: {data_path}. "
+            "Hãy truyền đường dẫn CSV hoặc Excel đúng bằng tham số --data."
         )
 
-    try:
-        data = pd.read_excel(data_path)
-    except ImportError as exc:
-        raise ImportError(
-            "Không thể đọc Excel; hãy cài openpyxl bằng "
-            "'python -m pip install openpyxl'."
-        ) from exc
+    suffix = data_path.suffix.lower()
+    if suffix == ".csv":
+        data = pd.read_csv(data_path)
+    elif suffix in {".xls", ".xlsx", ".xlsm"}:
+        try:
+            data = pd.read_excel(data_path)
+        except ImportError as exc:
+            raise ImportError(
+                "Không thể đọc Excel; hãy cài openpyxl bằng "
+                "'python -m pip install openpyxl'."
+            ) from exc
+    else:
+        raise ValueError(
+            f"Định dạng tệp không được hỗ trợ: {suffix or '(không có phần mở rộng)'}. "
+            "Hãy dùng .csv, .xls, .xlsx hoặc .xlsm."
+        )
 
     missing_columns = [column for column in REQUIRED_COLUMNS if column not in data.columns]
     if missing_columns:
@@ -70,7 +79,7 @@ def load_dataset(data_path: Path) -> pd.DataFrame:
             invalid_rows = (np.flatnonzero(invalid_mask.to_numpy())[:5] + 2).tolist()
             raise ValueError(
                 f"Cột {column} có {int(invalid_mask.sum())} giá trị không hợp lệ "
-                f"(không phải số); dòng Excel ví dụ: {invalid_rows}."
+                f"(không phải số); dòng dữ liệu ví dụ: {invalid_rows}."
             )
         if not np.isfinite(converted.to_numpy(dtype=float)).all():
             raise ValueError(f"Cột {column} chứa giá trị không hữu hạn.")
@@ -272,8 +281,11 @@ def main() -> None:
     parser.add_argument(
         "--data",
         type=Path,
-        default=ROOT / "data" / "raw" / "ENB2012_data.xlsx",
-        help="Đường dẫn tệp Excel ENB2012 (mặc định: data/raw/ENB2012_data.xlsx).",
+        default=ROOT / "data" / "raw" / "ENB2012_data.csv",
+        help=(
+            "Đường dẫn tệp CSV hoặc Excel ENB2012 "
+            "(mặc định: data/raw/ENB2012_data.csv)."
+        ),
     )
     parser.add_argument(
         "--baseline-only",
