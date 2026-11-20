@@ -22,7 +22,8 @@ BTL_Energy_Efficiency/
 │   ├── 00_fetch_data.py       # Script kết nối API lấy dữ liệu tự động từ thư viện ucimlrepo
 │   ├── 01_eda.py              # Script Khám phá dữ liệu (EDA): Thống kê mô tả và trực quan hóa
 │   ├── 02_preprocessing.py    # Script Tiền xử lý: Mã hóa One-Hot, chuẩn hóa Min-Max
-│   └── 03_modeling.py         # Script Huấn luyện, tinh chỉnh tham số và đánh giá mô hình (RMSE, R2)
+│   ├── 03_modeling.py         # Script mô hình hóa (bản hiện có)
+│   └── 04_evaluation.py       # Đánh giá chéo mô hình, chống rò rỉ giữa các fold
 │
 ├── .gitattributes             # Cấu hình Git LFS để quản lý các tệp dữ liệu/mô hình lớn
 ├── .gitignore                 # Cấu hình bỏ qua môi trường ảo (venv) và file rác khi đẩy lên Git
@@ -73,7 +74,23 @@ python src/02_preprocessing.py
 ```
 *(Thực hiện làm sạch, mã hóa phân loại, chuẩn hóa Min-Max và lưu kết quả vào `data/processed/cleaned_energy_data.csv`)*
 
-### Bước 3: Huấn luyện mô hình
+### Bước 3: Đánh giá mô hình dự báo tải năng lượng
+
+Đọc trực tiếp tệp Excel ENB2012 và fit tiền xử lý riêng trên phần train của từng fold. Chạy baseline Linear Regression:
+
+```powershell
+.\venv\Scripts\python.exe src\04_evaluation.py --data data\raw\ENB2012_data.xlsx --baseline-only
+```
+
+Chạy đủ sáu mô hình (Linear Regression, Ridge, Lasso, Random Forest, Gradient Boosting và LightGBM):
+
+```powershell
+.\venv\Scripts\python.exe src\04_evaluation.py --data data\raw\ENB2012_data.xlsx
+```
+
+Có thể bỏ `--data` để dùng mặc định `data/raw/ENB2012_data.xlsx`. Kết quả từng fold được ghi vào `reports/evaluation/fold_metrics.csv`; trung bình và độ lệch chuẩn qua 5 fold được ghi vào `reports/evaluation/cv_summary.csv`. KFold chia ngẫu nhiên theo dòng; GroupKFold giữ toàn bộ một cấu hình hình học (tổ hợp X1–X5) trong cùng fold validation, nên đo khả năng dự báo cho cấu hình chưa gặp khi huấn luyện. Các cấu hình mô hình trong script là cấu hình cố định cho lần so sánh này, không được tinh chỉnh theo kết quả validation.
+
+### Script mô hình hóa cũ
 ```bash
 python src/03_modeling.py
 ```
